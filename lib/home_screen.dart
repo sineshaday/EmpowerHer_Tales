@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
-
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-  runApp(const EmpowerHerTalesApp());
-}
+import 'screens/forum.dart';
+//void main() {
+  //WidgetsFlutterBinding.ensureInitialized();
+  //SystemChrome.setPreferredOrientations([
+    //DeviceOrientation.portraitUp,
+    //DeviceOrientation.portraitDown,
+  //]);
+  //runApp(const EmpowerHerTalesApp());
+//}
 
 class EmpowerHerTalesApp extends StatelessWidget {
   const EmpowerHerTalesApp({super.key});
@@ -183,7 +183,7 @@ class DrawerWidget extends StatelessWidget {
             context,
             'Community Forum',
             Icons.forum,
-            const CommunityForumPage(),
+            const ForumPage(),
           ),
           _buildDrawerItem(
             context,

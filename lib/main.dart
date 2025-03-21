@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'screens/forum.dart';
+import 'home_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();  // Ensures Flutter is fully initialized
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,  // Firebase initialization
+  );
+  
   runApp(const EmpowerHerTalesApp());
 }
 
@@ -12,8 +20,12 @@ class EmpowerHerTalesApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home:
-          const ForumPage(), // Directly setting ForumScreen as the home screen
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomeScreen(),
+        '/forum.': (context) => const ForumPage(),
+      }
+          //const HomeScreen(), // Directly setting ForumScreen as the home screen
     );
   }
 }
