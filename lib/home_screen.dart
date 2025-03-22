@@ -1,15 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+//import 'package:flutter/services.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'screens/forum.dart';
-//void main() {
-  //WidgetsFlutterBinding.ensureInitialized();
-  //SystemChrome.setPreferredOrientations([
-    //DeviceOrientation.portraitUp,
-    //DeviceOrientation.portraitDown,
-  //]);
-  //runApp(const EmpowerHerTalesApp());
-//}
 
 class EmpowerHerTalesApp extends StatelessWidget {
   const EmpowerHerTalesApp({super.key});
@@ -92,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen>
               scale: _animation,
               child: Hero(
                 tag: 'logo',
-                child: Image.asset('assets/empowerher_tales.png', height: 150),
+                child: Image.asset('assets/home.jpg', height: 150),
               ),
             ),
             const SizedBox(height: 30),

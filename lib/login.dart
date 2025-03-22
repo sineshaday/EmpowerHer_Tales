@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
-import 'signup_screen.dart';
-import 'recover_password_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+//import 'home_screen.dart';
+import 'signup.dart';
+//import 'recover_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,6 +14,32 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Function for login
+  Future<void> _login() async {
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      if (userCredential.user != null) {
+        // Successfully logged in, navigate to Home Screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
+      }
+    } catch (e) {
+      // Handle login errors
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Login Failed: ${e.toString()}")));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.asset("assets/home.jpeg", height: 150),
+              child: Image.asset("assets/home1.jpg", height: 150),
             ),
             SizedBox(height: 30),
             Align(
@@ -139,7 +166,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text("Home Screen")));
+    return Scaffold(body: Center(child: Text("EmpowerHer Tales")));
   }
 }
 
@@ -160,6 +187,7 @@ class RecoverPasswordScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 15),
+
             TextField(
               decoration: InputDecoration(
                 hintText: "Enter email...",
