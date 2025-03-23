@@ -1,21 +1,33 @@
 import 'package:flutter/material.dart';
 
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Profile App',
+      home: const ProfilePage(),
+    );
+  }
+}
+
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Ensure a clean white background
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           'Profile',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Roboto',
-          ),
+          style: TextStyle(color: Colors.black, fontSize: 22, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -32,7 +44,7 @@ class ProfilePage extends StatelessWidget {
                 const CircleAvatar(
                   radius: 60,
                   backgroundColor: Colors.transparent,
-                  backgroundImage: AssetImage('assets/profile_pic.png'), // Ensure the image is available
+                  backgroundImage: AssetImage('assets/profile_pic.png'), // Ensure image exists
                 ),
                 Container(
                   padding: const EdgeInsets.all(4),
@@ -47,11 +59,7 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.edit,
-                    color: Colors.redAccent,
-                    size: 20,
-                  ),
+                  child: const Icon(Icons.edit, color: Colors.redAccent, size: 20),
                 ),
               ],
             ),
@@ -64,22 +72,17 @@ class ProfilePage extends StatelessWidget {
               width: 120,
               child: ElevatedButton(
                 onPressed: () {
-                  // Add logout functionality here
+                  // Add logout functionality later
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE91E63),
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   elevation: 2,
                 ),
                 child: const Text(
                   'Log Out',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ),
             ),
@@ -92,27 +95,13 @@ class ProfilePage extends StatelessWidget {
   Widget _buildInfoBox(String text, double fontSize) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      width: 280, // Adjust width to match design
+      width: 280,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF3CD),
-        borderRadius: BorderRadius.circular(10),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFFFFF3CD), borderRadius: BorderRadius.circular(10)),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
+        style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: Colors.black87),
       ),
     );
   }
-}
-
-void main() {
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: ProfilePage(),
-  ));
 }
