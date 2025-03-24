@@ -1,6 +1,11 @@
 {
+<<<<<<< HEAD
     "name": "empowerher_tales",
     "short_name": "empowerher_tales",
+=======
+    "name": "event_calendar",
+    "short_name": "event_calendar",
+>>>>>>> origin/preshbridge
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
