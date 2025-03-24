@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/profile_page.dart';
+import 'screens/forum.dart';
 
 void main() {
   runApp(const EmpowerHerTalesApp());
