@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 //import 'package:flutter/services.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
-import 'screens/forum.dart';
+import 'forum.dart';
+import 'profile_page.dart';
 
 class EmpowerHerTalesApp extends StatelessWidget {
   const EmpowerHerTalesApp({super.key});
@@ -188,7 +189,7 @@ class DrawerWidget extends StatelessWidget {
             context,
             'Settings',
             Icons.settings,
-            const SettingsPage(),
+            const ProfilePage(),
           ),
           _buildDrawerItem(
             context,
