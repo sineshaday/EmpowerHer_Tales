@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 //import 'package:flutter/services.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'forum.dart';
+import 'package:empowerher_tales/event_calendar.dart';
 import 'profile_page.dart';
 
 class EmpowerHerTalesApp extends StatelessWidget {
@@ -182,7 +183,7 @@ class DrawerWidget extends StatelessWidget {
             context,
             'Events Calendar',
             Icons.event,
-            const EventsCalendarPage(),
+            EventCalendar(),
           ),
           const Divider(),
           _buildDrawerItem(

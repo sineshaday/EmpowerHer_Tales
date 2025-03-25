@@ -23,14 +23,6 @@ class EmpowerHerTalesApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: const LoginScreen(),
-      //initialRoute: '/',
-      //routes: {
-      //'/': (context) => const EmpowerHerTalesApp(),
-      //'/forum.': (context) => const ForumPage(),
-      //'/login': (context) => const LoginScreen(),
-      //'/signup': (context) => SignUpScreen(),
-      //}
-      //const HomeScreen(), // Directly setting ForumScreen as the home screen
     );
   }
 }
