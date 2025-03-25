@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
+<<<<<<< HEAD
         android:label="empowerher_tales"
+=======
+        android:label="event_calendar"
+>>>>>>> c53b465c1279762e086eea07df0d2ea672a4442a
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

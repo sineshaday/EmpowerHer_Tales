@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # empowerher_tales
+=======
+# event_calendar
+>>>>>>> c53b465c1279762e086eea07df0d2ea672a4442a
 
 A new Flutter project.
 
