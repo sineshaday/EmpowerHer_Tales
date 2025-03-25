@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'screens/profile_page.dart';
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -328,3 +330,21 @@ class FullScreenImage extends StatelessWidget {
   }
 >>>>>>> c53b465c1279762e086eea07df0d2ea672a4442a
 }
+=======
+void main() {
+  runApp(const EmpowerHerTalesApp());
+}
+
+class EmpowerHerTalesApp extends StatelessWidget {
+  const EmpowerHerTalesApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home:
+          const ProfilePage(), // Directly setting ForumScreen as the home screen
+    );
+  }
+}
+>>>>>>> bf7c780b42bf4a319d5aa779e72595ecfac66b59
