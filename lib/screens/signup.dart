@@ -1,4 +1,3 @@
-import 'package:empowerher_tales_login_and_signup/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 

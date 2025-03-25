@@ -1,7 +1,6 @@
+import 'package:empowerher_tales/screens/signup.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
-import '../signup_screen.dart';
-import '../recover_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
