@@ -21,8 +21,8 @@ class ProfilePageState extends State<ProfilePage> {
   User? _user;
   bool _loading = true;
   bool _updating = false;
-  String _name = "";
-  String _email = "";
+  String _name = "Guest User";
+  String _email = "guest@example.com";
   String _photoURL = "assets/profile_pic.png";
   final TextEditingController _nameController = TextEditingController();
 
@@ -37,10 +37,9 @@ class ProfilePageState extends State<ProfilePage> {
     _user = _auth.currentUser;
 
     if (_user == null) {
-      Future.microtask(() {
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/login');
-        }
+      setState(() {
+        _nameController.text = _name;
+        _loading = false;
       });
       return;
     }
@@ -89,10 +88,12 @@ class ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _uploadImage() async {
+    if (_user == null) return;
+
     final XFile? pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
     );
-    if (pickedFile == null || _user == null) return;
+    if (pickedFile == null) return;
 
     setState(() => _updating = true);
     try {
@@ -144,68 +145,89 @@ class ProfilePageState extends State<ProfilePage> {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: Center(
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: 20),
             Stack(
               alignment: Alignment.bottomRight,
               children: [
                 CircleAvatar(
-                  radius: 60,
+                  radius: 65,
                   backgroundColor: Colors.transparent,
                   backgroundImage:
                       _photoURL.startsWith('http')
                           ? NetworkImage(_photoURL)
                           : AssetImage(_photoURL) as ImageProvider,
                 ),
-                GestureDetector(
-                  onTap: _uploadImage,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26.withAlpha(51),
-                          blurRadius: 4,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.edit,
-                      color: Colors.redAccent,
-                      size: 20,
+                if (_user != null)
+                  GestureDetector(
+                    onTap: _uploadImage,
+                    child: Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.edit,
+                        color: Colors.pinkAccent,
+                        size: 18,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 25),
             _buildEditableInfoBox(),
             const SizedBox(height: 10),
-            _buildInfoBox(_email, 16),
+            _buildInfoBox(_email, 14.5),
             const SizedBox(height: 25),
-            SizedBox(
-              width: 120,
-              child: ElevatedButton(
-                onPressed: _logout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE91E63),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            if (_user != null)
+              SizedBox(
+                width: 140,
+                height: 42,
+                child: ElevatedButton(
+                  onPressed: _logout,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.pinkAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 3,
                   ),
-                  elevation: 2,
-                ),
-                child: const Text(
-                  'Log Out',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                  child: const Text(
+                    'Log Out',
+                    style: TextStyle(fontSize: 15, color: Colors.white),
+                  ),
                 ),
               ),
-            ),
+            if (_user == null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "You're browsing as a guest. ",
+                      style: TextStyle(fontSize: 13),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacementNamed(context, '/login');
+                      },
+                      child: const Text(
+                        'Log In',
+                        style: TextStyle(
+                          color: Colors.pinkAccent,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (_updating)
               const Padding(
                 padding: EdgeInsets.all(20.0),
@@ -220,17 +242,22 @@ class ProfilePageState extends State<ProfilePage> {
   Widget _buildEditableInfoBox() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      width: 280,
+      height: 40,
+      width: 300,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: const Color(0xFFFFF3CD),
         borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 1)),
+        ],
       ),
       child: TextFormField(
         controller: _nameController,
+        enabled: _user != null,
         textAlign: TextAlign.center,
         style: const TextStyle(
-          fontSize: 18,
+          fontSize: 15,
           fontWeight: FontWeight.bold,
           color: Colors.black87,
         ),
@@ -243,11 +270,15 @@ class ProfilePageState extends State<ProfilePage> {
   Widget _buildInfoBox(String text, double fontSize) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      width: 280,
+      height: 40,
+      width: 300,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: const Color(0xFFFFF3CD),
         borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 1)),
+        ],
       ),
       child: Text(
         text,
