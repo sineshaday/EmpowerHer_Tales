@@ -270,7 +270,7 @@ class ProfilePageState extends State<ProfilePage> {
   Widget _buildInfoBox(String text, double fontSize) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      height: 40,
+      height: 43,
       width: 300,
       alignment: Alignment.center,
       decoration: BoxDecoration(
