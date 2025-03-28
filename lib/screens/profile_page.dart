@@ -9,10 +9,10 @@ class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  ProfilePageState createState() => ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class ProfilePageState extends State<ProfilePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -21,10 +21,10 @@ class _ProfilePageState extends State<ProfilePage> {
   User? _user;
   bool _loading = true;
   bool _updating = false;
-  String _name = "";
-  String _email = "";
-  String _photoURL = "assets/profile_pic.png"; // Default profile image
-  TextEditingController _nameController = TextEditingController();
+  String _name = "Guest User";
+  String _email = "guest@example.com";
+  String _photoURL = "assets/profile_pic.png";
+  final TextEditingController _nameController = TextEditingController();
 
   @override
   void initState() {
@@ -34,33 +34,43 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _fetchUserProfile() async {
     setState(() => _loading = true);
-
     _user = _auth.currentUser;
+
     if (_user == null) {
-      // If no user is logged in, redirect to login page
-      Navigator.pushReplacementNamed(context, '/login');
+      setState(() {
+        _nameController.text = _name;
+        _loading = false;
+      });
       return;
     }
 
     try {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(_user!.uid).get();
+      final DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(_user!.uid).get();
+
       if (userDoc.exists) {
         setState(() {
           _name = userDoc['name'] ?? _user!.displayName ?? 'Anonymous';
           _email = _user!.email ?? '';
-          _photoURL = userDoc['photoURL'] ?? _user!.photoURL ?? 'assets/profile_pic.png';
+          _photoURL =
+              userDoc['photoURL'] ??
+              _user!.photoURL ??
+              'assets/profile_pic.png';
           _nameController.text = _name;
         });
       }
     } catch (e) {
-      print("Error fetching user profile: $e");
+      debugPrint("Error fetching user profile: $e");
     } finally {
       setState(() => _loading = false);
     }
   }
 
   Future<void> _updateName() async {
-    if (_user == null || _nameController.text.trim().isEmpty || _nameController.text == _name) return;
+    if (_user == null ||
+        _nameController.text.trim().isEmpty ||
+        _nameController.text == _name)
+      return;
 
     setState(() => _updating = true);
     try {
@@ -71,29 +81,37 @@ class _ProfilePageState extends State<ProfilePage> {
         _name = _nameController.text.trim();
       });
     } catch (e) {
-      print("Error updating name: $e");
+      debugPrint("Error updating name: $e");
     } finally {
       setState(() => _updating = false);
     }
   }
 
   Future<void> _uploadImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile == null || _user == null) return;
+    if (_user == null) return;
+
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+    );
+    if (pickedFile == null) return;
 
     setState(() => _updating = true);
     try {
-      File imageFile = File(pickedFile.path);
-      Reference ref = _storage.ref().child('profile-images/${_user!.uid}');
+      final File imageFile = File(pickedFile.path);
+      final Reference ref = _storage.ref().child(
+        'profile-images/${_user!.uid}',
+      );
       await ref.putFile(imageFile);
-      String downloadURL = await ref.getDownloadURL();
+      final String downloadURL = await ref.getDownloadURL();
 
-      await _firestore.collection('users').doc(_user!.uid).update({'photoURL': downloadURL});
+      await _firestore.collection('users').doc(_user!.uid).update({
+        'photoURL': downloadURL,
+      });
       setState(() {
         _photoURL = downloadURL;
       });
     } catch (e) {
-      print("Error uploading image: $e");
+      debugPrint("Error uploading image: $e");
     } finally {
       setState(() => _updating = false);
     }
@@ -101,13 +119,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _logout() async {
     await _auth.signOut();
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/login');
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -115,65 +134,100 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         title: const Text(
           'Profile',
-          style: TextStyle(color: Colors.black, fontSize: 22, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: Center(
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: 20),
             Stack(
               alignment: Alignment.bottomRight,
               children: [
                 CircleAvatar(
-                  radius: 60,
+                  radius: 65,
                   backgroundColor: Colors.transparent,
-                  backgroundImage: _photoURL.startsWith('http')
-                      ? NetworkImage(_photoURL) as ImageProvider
-                      : AssetImage(_photoURL),
+                  backgroundImage:
+                      _photoURL.startsWith('http')
+                          ? NetworkImage(_photoURL)
+                          : AssetImage(_photoURL) as ImageProvider,
                 ),
-                GestureDetector(
-                  onTap: _uploadImage,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26.withOpacity(0.2),
-                          blurRadius: 4,
-                          spreadRadius: 1,
-                        ),
-                      ],
+                if (_user != null)
+                  GestureDetector(
+                    onTap: _uploadImage,
+                    child: Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.edit,
+                        color: Colors.pinkAccent,
+                        size: 18,
+                      ),
                     ),
-                    child: const Icon(Icons.edit, color: Colors.redAccent, size: 20),
                   ),
-                ),
               ],
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 25),
             _buildEditableInfoBox(),
             const SizedBox(height: 10),
-            _buildInfoBox(_email, 16, isReadOnly: true),
+            _buildInfoBox(_email, 14.5),
             const SizedBox(height: 25),
-            SizedBox(
-              width: 120,
-              child: ElevatedButton(
-                onPressed: _logout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE91E63),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  elevation: 2,
+            if (_user != null)
+              SizedBox(
+                width: 140,
+                height: 42,
+                child: ElevatedButton(
+                  onPressed: _logout,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.pinkAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 3,
+                  ),
+                  child: const Text(
+                    'Log Out',
+                    style: TextStyle(fontSize: 15, color: Colors.white),
+                  ),
                 ),
-                child: const Text('Log Out', style: TextStyle(fontSize: 16, color: Colors.white)),
               ),
-            ),
+            if (_user == null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "You're browsing as a guest. ",
+                      style: TextStyle(fontSize: 13),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacementNamed(context, '/login');
+                      },
+                      child: const Text(
+                        'Log In',
+                        style: TextStyle(
+                          color: Colors.pinkAccent,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (_updating)
               const Padding(
                 padding: EdgeInsets.all(20.0),
@@ -188,30 +242,51 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildEditableInfoBox() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      width: 280,
+      height: 40,
+      width: 300,
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: const Color(0xFFFFF3CD), borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3CD),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 1)),
+        ],
+      ),
       child: TextFormField(
         controller: _nameController,
+        enabled: _user != null,
         textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-        decoration: const InputDecoration(
-          border: InputBorder.none,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
         ),
+        decoration: const InputDecoration(border: InputBorder.none),
         onEditingComplete: _updateName,
       ),
     );
   }
 
-  Widget _buildInfoBox(String text, double fontSize, {bool isReadOnly = false}) {
+  Widget _buildInfoBox(String text, double fontSize) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      width: 280,
+      height: 43,
+      width: 300,
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: const Color(0xFFFFF3CD), borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3CD),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 1)),
+        ],
+      ),
       child: Text(
         text,
-        style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: Colors.black87),
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
       ),
     );
   }

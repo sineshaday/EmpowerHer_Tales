@@ -69,6 +69,7 @@ flutter:
     - assets/profile_pic.png
     - assets/home1.jpg
     - assets/home.jpg
+    - assets/default_profile.jpeg
     
 
   # The following line ensures that the Material Icons font is
