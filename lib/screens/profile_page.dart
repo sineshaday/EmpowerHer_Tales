@@ -49,13 +49,20 @@ class ProfilePageState extends State<ProfilePage> {
           await _firestore.collection('users').doc(_user!.uid).get();
 
       if (userDoc.exists) {
+        final data = userDoc.data() as Map<String, dynamic>?;
+
         setState(() {
-          _name = userDoc['name'] ?? _user!.displayName ?? 'Anonymous';
-          _email = _user!.email ?? '';
+          _name = data?['name'] ?? _user!.displayName ?? 'Anonymous';
+          _email = _user!.email ?? 'guest@example.com';
           _photoURL =
-              userDoc['photoURL'] ??
-              _user!.photoURL ??
-              'assets/profile_pic.png';
+              data?['photoURL'] ?? _user!.photoURL ?? 'assets/profile_pic.png';
+          _nameController.text = _name;
+        });
+      } else {
+        setState(() {
+          _name = _user!.displayName ?? 'Anonymous';
+          _email = _user!.email ?? 'guest@example.com';
+          _photoURL = _user!.photoURL ?? 'assets/profile_pic.png';
           _nameController.text = _name;
         });
       }
