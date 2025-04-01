@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,11 +16,7 @@ class ForumUser {
   final String name;
   final String avatar;
 
-  const ForumUser({
-    required this.id,
-    required this.name,
-    required this.avatar,
-  });
+  const ForumUser({required this.id, required this.name, required this.avatar});
 }
 
 class ForumPost {
@@ -82,10 +79,7 @@ class ForumComment {
     this.isUpvotedByCurrentUser = false,
   });
 
-  ForumComment copyWith({
-    int? upvotes,
-    bool? isUpvotedByCurrentUser,
-  }) {
+  ForumComment copyWith({int? upvotes, bool? isUpvotedByCurrentUser}) {
     return ForumComment(
       id: id,
       content: content,
@@ -115,9 +109,7 @@ class ChatMessage {
     this.isRead = false,
   });
 
-  ChatMessage copyWith({
-    bool? isRead,
-  }) {
+  ChatMessage copyWith({bool? isRead}) {
     return ChatMessage(
       id: id,
       content: content,
@@ -140,6 +132,7 @@ class ForumPage extends StatefulWidget {
 class _ForumPageState extends State<ForumPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  bool _showFab = true;
   late final TextEditingController _postController;
   late final TextEditingController _commentController;
   late final TextEditingController _chatMessageController;
@@ -170,10 +163,17 @@ class _ForumPageState extends State<ForumPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _postController = TextEditingController();
     _commentController = TextEditingController();
     _chatMessageController = TextEditingController();
+
+    _tabController.addListener(() {
+    setState(() {
+      _showFab = _tabController.index == 0; // Only show FAB for first tab (Discussions)
+    });
+  });
+  
     _generateMockData();
   }
 
@@ -190,8 +190,16 @@ class _ForumPageState extends State<ForumPage>
     // Mock users
     _users = const [
       ForumUser(id: 'user2', name: 'Alex Chen', avatar: 'assets/avatar2.png'),
-      ForumUser(id: 'user3', name: 'Maria Garcia', avatar: 'assets/avatar3.png'),
-      ForumUser(id: 'user4', name: 'James Wilson', avatar: 'assets/avatar4.png'),
+      ForumUser(
+        id: 'user3',
+        name: 'Maria Garcia',
+        avatar: 'assets/avatar3.png',
+      ),
+      ForumUser(
+        id: 'user4',
+        name: 'James Wilson',
+        avatar: 'assets/avatar4.png',
+      ),
     ];
 
     // Mock forum posts
@@ -269,7 +277,9 @@ class _ForumPageState extends State<ForumPage>
         id: 'msg2',
         content:
             'Yes, I found it really helpful! Are you attending the workshop next week?',
-        timestamp: DateTime.now().subtract(const Duration(hours: 1, minutes: 50)),
+        timestamp: DateTime.now().subtract(
+          const Duration(hours: 1, minutes: 50),
+        ),
         sender: _currentUser,
         receiver: _users[0],
         isRead: true,
@@ -277,7 +287,9 @@ class _ForumPageState extends State<ForumPage>
       ChatMessage(
         id: 'msg3',
         content: 'I was thinking about it. Want to go together?',
-        timestamp: DateTime.now().subtract(const Duration(hours: 1, minutes: 45)),
+        timestamp: DateTime.now().subtract(
+          const Duration(hours: 1, minutes: 45),
+        ),
         sender: _users[0],
         receiver: _currentUser,
         isRead: true,
@@ -296,7 +308,8 @@ class _ForumPageState extends State<ForumPage>
   void _showCreatePostDialog() {
     final _postTitleController = TextEditingController();
     final _postContentController = TextEditingController();
-    String dialogCategory = _selectedCategory == 'All' ? 'Tech' : _selectedCategory;
+    String dialogCategory =
+        _selectedCategory == 'All' ? 'Tech' : _selectedCategory;
 
     showDialog(
       context: context,
@@ -315,13 +328,16 @@ class _ForumPageState extends State<ForumPage>
                         labelText: 'Category',
                         border: OutlineInputBorder(),
                       ),
-                      items: _categories
-                          .where((category) => category != 'All')
-                          .map((category) => DropdownMenuItem(
-                                value: category,
-                                child: Text(category),
-                              ))
-                          .toList(),
+                      items:
+                          _categories
+                              .where((category) => category != 'All')
+                              .map(
+                                (category) => DropdownMenuItem(
+                                  value: category,
+                                  child: Text(category),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (value) {
                         if (value != null) {
                           setState(() {
@@ -364,7 +380,9 @@ class _ForumPageState extends State<ForumPage>
                         _postContentController.text.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Please fill in both title and content'),
+                          content: Text(
+                            'Please fill in both title and content',
+                          ),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -484,56 +502,63 @@ class _ForumPageState extends State<ForumPage>
     );
 
     setState(() {
-      _posts = _posts.map((p) {
-        if (p.id == post.id) {
-          return p.copyWith(
-            comments: [...p.comments, newComment],
-          );
-        }
-        return p;
-      }).toList();
+      _posts =
+          _posts.map((p) {
+            if (p.id == post.id) {
+              return p.copyWith(comments: [...p.comments, newComment]);
+            }
+            return p;
+          }).toList();
       _commentController.clear();
     });
   }
 
   void _toggleUpvote(ForumPost post) {
     setState(() {
-      _posts = _posts.map((p) {
-        if (p.id == post.id) {
-          return p.copyWith(
-            upvotes: post.isUpvotedByCurrentUser ? post.upvotes - 1 : post.upvotes + 1,
-            isUpvotedByCurrentUser: !post.isUpvotedByCurrentUser,
-          );
-        }
-        return p;
-      }).toList();
+      _posts =
+          _posts.map((p) {
+            if (p.id == post.id) {
+              return p.copyWith(
+                upvotes:
+                    post.isUpvotedByCurrentUser
+                        ? post.upvotes - 1
+                        : post.upvotes + 1,
+                isUpvotedByCurrentUser: !post.isUpvotedByCurrentUser,
+              );
+            }
+            return p;
+          }).toList();
     });
   }
 
   void _toggleCommentUpvote(ForumComment comment, String postId) {
     setState(() {
-      _posts = _posts.map((post) {
-        if (post.id == postId) {
-          final updatedComments = post.comments.map((c) {
-            if (c.id == comment.id) {
-              return c.copyWith(
-                upvotes: comment.isUpvotedByCurrentUser
-                    ? comment.upvotes - 1
-                    : comment.upvotes + 1,
-                isUpvotedByCurrentUser: !comment.isUpvotedByCurrentUser,
-              );
+      _posts =
+          _posts.map((post) {
+            if (post.id == postId) {
+              final updatedComments =
+                  post.comments.map((c) {
+                    if (c.id == comment.id) {
+                      return c.copyWith(
+                        upvotes:
+                            comment.isUpvotedByCurrentUser
+                                ? comment.upvotes - 1
+                                : comment.upvotes + 1,
+                        isUpvotedByCurrentUser: !comment.isUpvotedByCurrentUser,
+                      );
+                    }
+                    return c;
+                  }).toList();
+              return post.copyWith(comments: updatedComments);
             }
-            return c;
+            return post;
           }).toList();
-          return post.copyWith(comments: updatedComments);
-        }
-        return post;
-      }).toList();
     });
   }
 
   void _sendChatMessage() {
-    if (_chatMessageController.text.isEmpty || _selectedChatUser == null) return;
+    if (_chatMessageController.text.isEmpty || _selectedChatUser == null)
+      return;
 
     final newMessage = ChatMessage(
       id: 'msg${_chatMessages.length + 1}',
@@ -574,7 +599,7 @@ class _ForumPageState extends State<ForumPage>
               // App Bar
               Container(
                 padding: const EdgeInsets.all(16.0),
-                color: Colors.white,
+                color: Colors.pink,
                 child: Row(
                   children: [
                     InkWell(
@@ -582,29 +607,32 @@ class _ForumPageState extends State<ForumPage>
                       child: const Icon(
                         Icons.arrow_back,
                         size: 20,
-                        color: Colors.black54,
+                        color: Colors.white,
                       ),
                     ),
+
                     const SizedBox(width: 16),
                     const Text(
                       'Community Forum',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
+                        color: Colors.white,
                       ),
                     ),
+
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.search, color: Colors.black54),
+                      icon: const Icon(Icons.search, color: Colors.white),
                       onPressed: () {
                         // Implement search functionality
                       },
                     ),
-                    const CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Colors.grey,
-                      child: Icon(Icons.person, color: Colors.white, size: 18),
-                    ),
+                    //const CircleAvatar(
+                    //radius: 16,
+                    //backgroundColor: Colors.grey,
+                    //child: Icon(Icons.person, color: Colors.white, size: 18),
+                    //),
                   ],
                 ),
               ),
@@ -627,10 +655,7 @@ class _ForumPageState extends State<ForumPage>
                   labelColor: const Color(0xFFFF4D79),
                   unselectedLabelColor: Colors.black54,
                   indicatorColor: const Color(0xFFFF4D79),
-                  tabs: const [
-                    Tab(text: 'Discussions'),
-                    Tab(text: 'Messages'),
-                  ],
+                  tabs: const [Tab(text: 'Discussions'), Tab(text: 'Messages')],
                 ),
               ),
 
@@ -651,20 +676,25 @@ class _ForumPageState extends State<ForumPage>
           ),
         ),
       ),
-      floatingActionButton: _tabController.index == 0
-          ? FloatingActionButton(
-              onPressed: _showCreatePostDialog,
-              backgroundColor: const Color(0xFFFF4D79),
-              child: const Icon(Icons.add, color: Colors.white),
-            )
-          : null,
+      floatingActionButton:
+          _showFab
+              //_tabController.index == 0
+              ? FloatingActionButton(
+                onPressed: _showCreatePostDialog,
+                backgroundColor: const Color(0xFFFF4D79),
+                child: const Icon(Icons.add, color: Colors.white),
+              )
+              : null,
     );
   }
 
   Widget _buildDiscussionsTab() {
-    final filteredPosts = _selectedCategory == 'All'
-        ? _posts
-        : _posts.where((post) => post.category == _selectedCategory).toList();
+    final filteredPosts =
+        _selectedCategory == 'All'
+            ? _posts
+            : _posts
+                .where((post) => post.category == _selectedCategory)
+                .toList();
 
     return Column(
       children: [
@@ -693,14 +723,16 @@ class _ForumPageState extends State<ForumPage>
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFFFF4D79) : Colors.grey[200],
+                    color:
+                        isSelected ? const Color(0xFFFF4D79) : Colors.grey[200],
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     category,
                     style: TextStyle(
                       color: isSelected ? Colors.white : Colors.black87,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -711,158 +743,169 @@ class _ForumPageState extends State<ForumPage>
 
         // Post List
         Expanded(
-          child: filteredPosts.isEmpty
-              ? const Center(child: Text('No posts found'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredPosts.length,
-                  itemBuilder: (context, index) {
-                    final post = filteredPosts[index];
+          child:
+              filteredPosts.isEmpty
+                  ? const Center(child: Text('No posts found'))
+                  : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredPosts.length,
+                    itemBuilder: (context, index) {
+                      final post = filteredPosts[index];
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Author info and category
-                            Row(
-                              children: [
-                                const CircleAvatar(
-                                  radius: 18,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(Icons.person, color: Colors.white),
-                                ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      post.author.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Author info and category
+                              Row(
+                                children: [
+                                  const CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: Colors.grey,
+                                    child: Icon(
+                                      Icons.person,
+                                      color: Colors.white,
                                     ),
-                                    Text(
-                                      _getTimeAgo(post.timestamp),
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        post.author.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
+                                      Text(
+                                        _getTimeAgo(post.timestamp),
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const Spacer(),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
                                     ),
-                                  ],
-                                ),
-                                const Spacer(),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      post.category,
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    post.category,
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // Post title and content
-                            Text(
-                              post.title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                ],
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(post.content, style: const TextStyle(fontSize: 14)),
 
-                            const SizedBox(height: 16),
+                              const SizedBox(height: 16),
 
-                            // Engagement buttons
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      constraints: const BoxConstraints(),
-                                      padding: EdgeInsets.zero,
-                                      icon: Icon(
-                                        post.isUpvotedByCurrentUser
-                                            ? Icons.thumb_up
-                                            : Icons.thumb_up_outlined,
-                                        color: post.isUpvotedByCurrentUser
-                                            ? const Color(0xFFFF4D79)
-                                            : Colors.grey,
+                              // Post title and content
+                              Text(
+                                post.title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                post.content,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Engagement buttons
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        constraints: const BoxConstraints(),
+                                        padding: EdgeInsets.zero,
+                                        icon: Icon(
+                                          post.isUpvotedByCurrentUser
+                                              ? Icons.thumb_up
+                                              : Icons.thumb_up_outlined,
+                                          color:
+                                              post.isUpvotedByCurrentUser
+                                                  ? const Color(0xFFFF4D79)
+                                                  : Colors.grey,
+                                          size: 20,
+                                        ),
+                                        onPressed: () => _toggleUpvote(post),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        post.upvotes.toString(),
+                                        style: TextStyle(
+                                          color: Colors.grey[700],
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.comment_outlined,
+                                        color: Colors.grey,
                                         size: 20,
                                       ),
-                                      onPressed: () => _toggleUpvote(post),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      post.upvotes.toString(),
-                                      style: TextStyle(
-                                        color: Colors.grey[700],
-                                        fontSize: 14,
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        post.comments.length.toString(),
+                                        style: TextStyle(
+                                          color: Colors.grey[700],
+                                          fontSize: 14,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.comment_outlined,
+                                    ],
+                                  ),
+                                  IconButton(
+                                    constraints: const BoxConstraints(),
+                                    padding: EdgeInsets.zero,
+                                    icon: const Icon(
+                                      Icons.share_outlined,
                                       color: Colors.grey,
                                       size: 20,
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      post.comments.length.toString(),
-                                      style: TextStyle(
-                                        color: Colors.grey[700],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                IconButton(
-                                  constraints: const BoxConstraints(),
-                                  padding: EdgeInsets.zero,
-                                  icon: const Icon(
-                                    Icons.share_outlined,
-                                    color: Colors.grey,
-                                    size: 20,
+                                    onPressed: () {
+                                      // Implement share functionality
+                                    },
                                   ),
-                                  onPressed: () {
-                                    // Implement share functionality
-                                  },
-                                ),
-                              ],
-                            ),
-
-                            // Comments section
-                            if (post.comments.isNotEmpty) ...[
-                              const Divider(height: 32),
-                              Text(
-                                'Comments (${post.comments.length})',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
+                                ],
                               ),
-                              const SizedBox(height: 12),
-                              ...post.comments.map((comment) => Padding(
+
+                              // Comments section
+                              if (post.comments.isNotEmpty) ...[
+                                const Divider(height: 32),
+                                Text(
+                                  'Comments (${post.comments.length})',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                ...post.comments.map(
+                                  (comment) => Padding(
                                     padding: const EdgeInsets.only(bottom: 16),
                                     child: Row(
                                       crossAxisAlignment:
@@ -896,7 +939,8 @@ class _ForumPageState extends State<ForumPage>
                                                   const SizedBox(width: 8),
                                                   Text(
                                                     _getTimeAgo(
-                                                        comment.timestamp),
+                                                      comment.timestamp,
+                                                    ),
                                                     style: TextStyle(
                                                       color: Colors.grey[600],
                                                       fontSize: 10,
@@ -915,20 +959,23 @@ class _ForumPageState extends State<ForumPage>
                                               Row(
                                                 children: [
                                                   GestureDetector(
-                                                    onTap: () =>
-                                                        _toggleCommentUpvote(
-                                                            comment, post.id),
+                                                    onTap:
+                                                        () =>
+                                                            _toggleCommentUpvote(
+                                                              comment,
+                                                              post.id,
+                                                            ),
                                                     child: Icon(
-                                                      comment
-                                                              .isUpvotedByCurrentUser
+                                                      comment.isUpvotedByCurrentUser
                                                           ? Icons.thumb_up
                                                           : Icons
                                                               .thumb_up_outlined,
-                                                      color: comment
-                                                              .isUpvotedByCurrentUser
-                                                          ? const Color(
-                                                              0xFFFF4D79)
-                                                          : Colors.grey,
+                                                      color:
+                                                          comment.isUpvotedByCurrentUser
+                                                              ? const Color(
+                                                                0xFFFF4D79,
+                                                              )
+                                                              : Colors.grey,
                                                       size: 14,
                                                     ),
                                                   ),
@@ -957,61 +1004,64 @@ class _ForumPageState extends State<ForumPage>
                                         ),
                                       ],
                                     ),
-                                  )),
-                            ],
-
-                            // Add comment
-                            const Divider(height: 24),
-                            Row(
-                              children: [
-                                const CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _commentController,
-                                    decoration: InputDecoration(
-                                      hintText: 'Write a comment...',
-                                      hintStyle: TextStyle(
-                                        color: Colors.grey[400],
-                                        fontSize: 14,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(20),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.grey[200],
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                      suffixIcon: IconButton(
-                                        icon: const Icon(
-                                          Icons.send,
-                                          color: Color(0xFFFF4D79),
-                                        ),
-                                        onPressed: () => _addComment(post),
-                                      ),
-                                    ),
                                   ),
                                 ),
                               ],
-                            ),
-                          ],
+
+                              // Add comment
+                              const Divider(height: 24),
+                              Row(
+                                children: [
+                                  const CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: Colors.grey,
+                                    child: Icon(
+                                      Icons.person,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _commentController,
+                                      decoration: InputDecoration(
+                                        hintText: 'Write a comment...',
+                                        hintStyle: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 14,
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.grey[200],
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
+                                            ),
+                                        suffixIcon: IconButton(
+                                          icon: const Icon(
+                                            Icons.send,
+                                            color: Color(0xFFFF4D79),
+                                          ),
+                                          onPressed: () => _addComment(post),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      );
+                    },
+                  ),
         ),
       ],
     );
@@ -1021,15 +1071,20 @@ class _ForumPageState extends State<ForumPage>
     final unreadCounts = Map.fromIterable(
       _users,
       key: (user) => user.id,
-      value: (user) => _chatMessages
-          .where((msg) =>
-              msg.receiver.id == _currentUser.id &&
-              msg.sender.id == user.id &&
-              !msg.isRead)
-          .length,
+      value:
+          (user) =>
+              _chatMessages
+                  .where(
+                    (msg) =>
+                        msg.receiver.id == _currentUser.id &&
+                        msg.sender.id == user.id &&
+                        !msg.isRead,
+                  )
+                  .length,
     );
 
-    final chatUsers = _users.where((user) => user.id != _currentUser.id).toList();
+    final chatUsers =
+        _users.where((user) => user.id != _currentUser.id).toList();
 
     return Column(
       children: [
@@ -1049,13 +1104,14 @@ class _ForumPageState extends State<ForumPage>
                   setState(() {
                     _selectedChatUser = user;
                     // Mark messages as read when opening chat
-                    _chatMessages = _chatMessages.map((msg) {
-                      if (msg.receiver.id == _currentUser.id &&
-                          msg.sender.id == user.id) {
-                        return msg.copyWith(isRead: true);
-                      }
-                      return msg;
-                    }).toList();
+                    _chatMessages =
+                        _chatMessages.map((msg) {
+                          if (msg.receiver.id == _currentUser.id &&
+                              msg.sender.id == user.id) {
+                            return msg.copyWith(isRead: true);
+                          }
+                          return msg;
+                        }).toList();
                   });
                 },
                 child: Container(
@@ -1107,172 +1163,190 @@ class _ForumPageState extends State<ForumPage>
 
         // Chat messages
         Expanded(
-          child: _selectedChatUser == null
-              ? const Center(child: Text('Select a user to start chatting'))
-              : Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      // Chat header
-                      Row(
-                        children: [
-                          const CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Colors.grey,
-                            child: Icon(
-                              Icons.person,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _selectedChatUser!.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(height: 24),
-
-                      // Messages list
-                      Expanded(
-                        child: ListView.builder(
-                          reverse: true,
-                          itemCount: _chatMessages
-                              .where((msg) =>
-                                  (msg.sender.id == _currentUser.id &&
-                                      msg.receiver.id == _selectedChatUser!.id) ||
-                                  (msg.sender.id == _selectedChatUser!.id &&
-                                      msg.receiver.id == _currentUser.id))
-                              .length,
-                          itemBuilder: (context, index) {
-                            final messages = _chatMessages
-                                .where((msg) =>
-                                    (msg.sender.id == _currentUser.id &&
-                                        msg.receiver.id ==
-                                            _selectedChatUser!.id) ||
-                                    (msg.sender.id == _selectedChatUser!.id &&
-                                        msg.receiver.id == _currentUser.id))
-                                .toList()
-                                .reversed
-                                .toList();
-                            final message = messages[index];
-                            final isCurrentUser =
-                                message.sender.id == _currentUser.id;
-
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisAlignment: isCurrentUser
-                                    ? MainAxisAlignment.end
-                                    : MainAxisAlignment.start,
-                                children: [
-                                  if (!isCurrentUser) ...[
-                                    const CircleAvatar(
-                                      radius: 12,
-                                      backgroundColor: Colors.grey,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                  ],
-                                  Container(
-                                    constraints: BoxConstraints(
-                                      maxWidth:
-                                          MediaQuery.of(context).size.width * 0.7,
-                                    ),
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: isCurrentUser
-                                          ? const Color(0xFFFF4D79)
-                                          : Colors.grey[200],
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: const Radius.circular(12),
-                                        topRight: const Radius.circular(12),
-                                        bottomLeft: isCurrentUser
-                                            ? const Radius.circular(12)
-                                            : const Radius.circular(0),
-                                        bottomRight: isCurrentUser
-                                            ? const Radius.circular(0)
-                                            : const Radius.circular(12),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      message.content,
-                                      style: TextStyle(
-                                        color: isCurrentUser
-                                            ? Colors.white
-                                            : Colors.black87,
-                                      ),
-                                    ),
-                                  ),
-                                  if (isCurrentUser) ...[
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      _getTimeAgo(message.timestamp),
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-
-                      // Message input
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _chatMessageController,
-                              decoration: InputDecoration(
-                                hintText: 'Type a message...',
-                                hintStyle: TextStyle(color: Colors.grey[400]),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                  borderSide: BorderSide.none,
-                                ),
-                                filled: true,
-                                fillColor: Colors.grey[200],
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundColor: const Color(0xFFFF4D79),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.send,
+          child:
+              _selectedChatUser == null
+                  ? const Center(child: Text('Select a user to start chatting'))
+                  : Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        // Chat header
+                        Row(
+                          children: [
+                            const CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Colors.grey,
+                              child: Icon(
+                                Icons.person,
                                 color: Colors.white,
                                 size: 18,
                               ),
-                              onPressed: _sendChatMessage,
                             ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _selectedChatUser!.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 24),
+
+                        // Messages list
+                        Expanded(
+                          child: ListView.builder(
+                            reverse: true,
+                            itemCount:
+                                _chatMessages
+                                    .where(
+                                      (msg) =>
+                                          (msg.sender.id == _currentUser.id &&
+                                              msg.receiver.id ==
+                                                  _selectedChatUser!.id) ||
+                                          (msg.sender.id ==
+                                                  _selectedChatUser!.id &&
+                                              msg.receiver.id ==
+                                                  _currentUser.id),
+                                    )
+                                    .length,
+                            itemBuilder: (context, index) {
+                              final messages =
+                                  _chatMessages
+                                      .where(
+                                        (msg) =>
+                                            (msg.sender.id == _currentUser.id &&
+                                                msg.receiver.id ==
+                                                    _selectedChatUser!.id) ||
+                                            (msg.sender.id ==
+                                                    _selectedChatUser!.id &&
+                                                msg.receiver.id ==
+                                                    _currentUser.id),
+                                      )
+                                      .toList()
+                                      .reversed
+                                      .toList();
+                              final message = messages[index];
+                              final isCurrentUser =
+                                  message.sender.id == _currentUser.id;
+
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  mainAxisAlignment:
+                                      isCurrentUser
+                                          ? MainAxisAlignment.end
+                                          : MainAxisAlignment.start,
+                                  children: [
+                                    if (!isCurrentUser) ...[
+                                      const CircleAvatar(
+                                        radius: 12,
+                                        backgroundColor: Colors.grey,
+                                        child: Icon(
+                                          Icons.person,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                    ],
+                                    Container(
+                                      constraints: BoxConstraints(
+                                        maxWidth:
+                                            MediaQuery.of(context).size.width *
+                                            0.7,
+                                      ),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            isCurrentUser
+                                                ? const Color(0xFFFF4D79)
+                                                : Colors.grey[200],
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: const Radius.circular(12),
+                                          topRight: const Radius.circular(12),
+                                          bottomLeft:
+                                              isCurrentUser
+                                                  ? const Radius.circular(12)
+                                                  : const Radius.circular(0),
+                                          bottomRight:
+                                              isCurrentUser
+                                                  ? const Radius.circular(0)
+                                                  : const Radius.circular(12),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        message.content,
+                                        style: TextStyle(
+                                          color:
+                                              isCurrentUser
+                                                  ? Colors.white
+                                                  : Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                    if (isCurrentUser) ...[
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _getTimeAgo(message.timestamp),
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            },
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+
+                        // Message input
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _chatMessageController,
+                                decoration: InputDecoration(
+                                  hintText: 'Type a message...',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey[200],
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: const Color(0xFFFF4D79),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.send,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                onPressed: _sendChatMessage,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
         ),
       ],
     );
