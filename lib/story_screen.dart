@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'main.dart';
 
 class StoryScreen extends StatefulWidget {
   const StoryScreen({super.key});
@@ -9,103 +14,16 @@ class StoryScreen extends StatefulWidget {
 }
 
 class _StoryScreenState extends State<StoryScreen> {
-  final List<Story> stories = [
-    Story(
-      id: '1',
-      title: 'Women in Tech Breaking Barriers',
-      content: 'A group of women engineers have developed a new AI system that helps identify and prevent gender bias in hiring processes.',
-      author: 'Lucy Huddleston',
-      timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-      likes: 28,
-      comments: [
-        Comment(
-          author: 'Sarah',
-          content: 'This is so inspiring! Thank you for sharing this story.',
-          timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-        ),
-        Comment(
-          author: 'Jessica',
-          content: 'We need more initiatives like this! 👏',
-          timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
-        ),
-      ],
-      readTime: '4min read',
-      category: 'Technology',
-      isAcademic: true,
-      imageUrl: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1469&q=80',
-    ),
-    Story(
-      id: '2',
-      title: 'Tech companies commit to digital inclusion initiative',
-      content: 'Several major tech companies announced a new coalition to improve digital access for underserved communities worldwide.',
-      author: 'Samantha Chen',
-      timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-      likes: 45,
-      comments: [
-        Comment(
-          author: 'Michelle',
-          content: 'This is a step in the right direction!',
-          timestamp: DateTime.now().subtract(const Duration(hours: 4)),
-        ),
-      ],
-      readTime: '3min read',
-      category: 'Business',
-      isAcademic: false,
-    ),
-    Story(
-      id: '3',
-      title: 'Female-led startup raises \$10M for education platform',
-      content: 'A startup focused on providing STEM education to girls in rural areas has secured major funding to expand their operations.',
-      author: 'Maria Rodriguez',
-      timestamp: DateTime.now().subtract(const Duration(hours: 8)),
-      likes: 67,
-      comments: [],
-      readTime: '5min read',
-      category: 'Education',
-      isAcademic: true,
-    ),
-    Story(
-      id: '4',
-      title: 'Women\'s leadership summit announces global expansion',
-      content: 'The annual women\'s leadership summit will now be held in 10 countries, bringing together female leaders from diverse backgrounds.',
-      author: 'Priya Sharma',
-      timestamp: DateTime.now().subtract(const Duration(days: 1)),
-      likes: 93,
-      comments: [],
-      readTime: '6min read',
-      category: 'Leadership',
-      isAcademic: true,
-    ),
-    Story(
-      id: '5',
-      title: 'New research on gender equality in STEM fields',
-      content: 'A comprehensive study published in Nature reveals significant progress in gender representation in STEM fields over the last decade, but highlights persistent challenges.',
-      author: 'Dr. Emily Chen',
-      timestamp: DateTime.now().subtract(const Duration(hours: 12)),
-      likes: 112,
-      comments: [],
-      readTime: '8min read',
-      category: 'Research',
-      isAcademic: true,
-    ),
-    Story(
-      id: '6',
-      title: 'Academic scholarship program for women in engineering',
-      content: 'A new scholarship program aims to support women pursuing advanced degrees in engineering disciplines with full tuition coverage and mentorship opportunities.',
-      author: 'Prof. Sarah Johnson',
-      timestamp: DateTime.now().subtract(const Duration(hours: 18)),
-      likes: 87,
-      comments: [],
-      readTime: '4min read',
-      category: 'Scholarships',
-      isAcademic: true,
-    ),
-  ];
-
+  // Firebase instances
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final String _collectionName = 'stories';
+  
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
   bool _isUploading = false;
   bool _showOnlyAcademic = false;
+  String _selectedCategory = 'All';
 
   @override
   void dispose() {
@@ -117,11 +35,16 @@ class _StoryScreenState extends State<StoryScreen> {
   void _showUploadDialog({Story? storyToEdit}) {
     String selectedCategory = storyToEdit?.category ?? 'Technology';
     bool isAcademic = storyToEdit?.isAcademic ?? false;
+    File? imageFile;
+    String? imageUrl = storyToEdit?.imageUrl;
     
     // If editing, pre-fill the fields
     if (storyToEdit != null) {
       _titleController.text = storyToEdit.title;
       _contentController.text = storyToEdit.content;
+    } else {
+      _titleController.clear();
+      _contentController.clear();
     }
     
     showDialog(
@@ -194,52 +117,79 @@ class _StoryScreenState extends State<StoryScreen> {
                     const Icon(Icons.image, color: Colors.grey),
                     const SizedBox(width: 8),
                     TextButton(
-                      onPressed: () {
-                        // Show a mock image selection dialog
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Select Image'),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ListTile(
-                                  leading: const Icon(Icons.camera_alt),
-                                  title: const Text('Take Photo'),
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Camera functionality would be implemented here')),
-                                    );
-                                  },
-                                ),
-                                ListTile(
-                                  leading: const Icon(Icons.photo_library),
-                                  title: const Text('Choose from Gallery'),
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                    // Show image selected confirmation
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Image selected successfully'),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
-                                    setState(() {
-                                      // In a real app, we would store the image path
-                                      // For now, just show a confirmation
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
+                      onPressed: () async {
+                        final picker = ImagePicker();
+                        final pickedFile = await picker.pickImage(
+                          source: ImageSource.gallery,
                         );
+                        if (pickedFile != null) {
+                          setState(() {
+                            imageFile = File(pickedFile.path);
+                            imageUrl = null; // Clear previous URL if any
+                          });
+                          
+                          // Show image selected confirmation
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Image selected successfully'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
                       },
-                      child: const Text('Add Image'),
+                      child: Text(imageFile != null || imageUrl != null ? 'Change Image' : 'Add Image'),
                     ),
+                    if (imageFile != null || imageUrl != null)
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            imageFile = null;
+                            imageUrl = null;
+                          });
+                        },
+                        child: const Text('Remove'),
+                      ),
                   ],
                 ),
+                if (imageFile != null)
+                  Container(
+                    height: 150,
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(top: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Image.file(
+                      imageFile!,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                else if (imageUrl != null)
+                  Container(
+                    height: 150,
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(top: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Image.network(
+                      imageUrl!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                          child: Text('Error loading image'),
+                        );
+                      },
+                    ),
+                  ),
               ],
             ),
           ),
@@ -255,9 +205,9 @@ class _StoryScreenState extends State<StoryScreen> {
             ElevatedButton(
               onPressed: () {
                 if (storyToEdit == null) {
-                  _uploadStory(selectedCategory, isAcademic);
+                  _uploadStory(selectedCategory, isAcademic, imageFile);
                 } else {
-                  _updateStory(storyToEdit.id, selectedCategory, isAcademic);
+                  _updateStory(storyToEdit.id, selectedCategory, isAcademic, imageFile, imageUrl);
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -274,7 +224,8 @@ class _StoryScreenState extends State<StoryScreen> {
     );
   }
 
-  void _uploadStory(String category, bool isAcademic) {
+  // CREATE operation
+  Future<void> _uploadStory(String category, bool isAcademic, File? imageFile) async {
     if (_titleController.text.isEmpty || _contentController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
@@ -306,44 +257,74 @@ class _StoryScreenState extends State<StoryScreen> {
       ),
     );
 
-    // Simulate network delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      // Get current timestamp
-      final now = DateTime.now();
-      
-      // Add the new story to the list
-      setState(() {
-        stories.insert(
-          0,
-          Story(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            title: _titleController.text,
-            content: _contentController.text,
-            author: 'You',
-            timestamp: now,
-            likes: 0,
-            comments: [],
-            readTime: '1min read',
-            category: category,
-            isAcademic: isAcademic,
-          ),
-        );
-        _isUploading = false;
+    try {
+      // Upload image if provided
+      String? imageUrl;
+      if (imageFile != null) {
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
+        final storageRef = _storage.ref().child('story_images/$fileName');
+        
+        final uploadTask = storageRef.putFile(imageFile);
+        final snapshot = await uploadTask;
+        
+        imageUrl = await snapshot.ref.getDownloadURL();
+      }
+
+      // Calculate read time
+      final wordsPerMinute = 200;
+      final wordCount = _contentController.text.split(' ').length;
+      final minutes = (wordCount / wordsPerMinute).ceil();
+      final readTime = '${minutes}min read';
+
+      // Add story to Firestore
+      await _firestore.collection(_collectionName).add({
+        'title': _titleController.text,
+        'content': _contentController.text,
+        'author': 'You', // Simplified without authentication
+        'timestamp': FieldValue.serverTimestamp(),
+        'likes': 0,
+        'comments': [],
+        'readTime': readTime,
+        'category': category,
+        'isAcademic': isAcademic,
+        'imageUrl': imageUrl,
+        'isLiked': false,
+        'isSaved': false,
       });
 
       // Clear the text fields
       _titleController.clear();
       _contentController.clear();
 
+      setState(() {
+        _isUploading = false;
+      });
+
       // Close the loading dialog
       Navigator.of(context).pop();
 
       // Show success message
-      _showUploadSuccessDialog(now);
-    });
+      _showUploadSuccessDialog(DateTime.now());
+    } catch (e) {
+      // Close the loading dialog
+      Navigator.of(context).pop();
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error uploading story: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      
+      setState(() {
+        _isUploading = false;
+      });
+    }
   }
 
-  void _updateStory(String storyId, String category, bool isAcademic) {
+  // UPDATE operation
+  Future<void> _updateStory(String storyId, String category, bool isAcademic, File? imageFile, String? currentImageUrl) async {
     if (_titleController.text.isEmpty || _contentController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
@@ -371,28 +352,53 @@ class _StoryScreenState extends State<StoryScreen> {
       ),
     );
 
-    // Simulate network delay
-    Future.delayed(const Duration(milliseconds: 300), () {
-      // Find and update the story
-      final storyIndex = stories.indexWhere((s) => s.id == storyId);
-      if (storyIndex != -1) {
-        final oldStory = stories[storyIndex];
-        setState(() {
-          stories[storyIndex] = Story(
-            id: oldStory.id,
-            title: _titleController.text,
-            content: _contentController.text,
-            author: oldStory.author,
-            timestamp: oldStory.timestamp,
-            likes: oldStory.likes,
-            comments: oldStory.comments,
-            readTime: oldStory.readTime,
-            category: category,
-            isAcademic: isAcademic,
-            imageUrl: oldStory.imageUrl,
-          );
-        });
+    try {
+      // Upload new image if provided
+      String? imageUrl = currentImageUrl;
+      if (imageFile != null) {
+        // Delete old image if exists
+        if (currentImageUrl != null) {
+          try {
+            final ref = _storage.refFromURL(currentImageUrl);
+            await ref.delete();
+          } catch (e) {
+            print('Error deleting old image: $e');
+            // Continue with update even if image deletion fails
+          }
+        }
+        
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
+        final storageRef = _storage.ref().child('story_images/$fileName');
+        
+        final uploadTask = storageRef.putFile(imageFile);
+        final snapshot = await uploadTask;
+        
+        imageUrl = await snapshot.ref.getDownloadURL();
       }
+
+      // Calculate read time
+      final wordsPerMinute = 200;
+      final wordCount = _contentController.text.split(' ').length;
+      final minutes = (wordCount / wordsPerMinute).ceil();
+      final readTime = '${minutes}min read';
+
+      // Update story in Firestore
+      final updateData = {
+        'title': _titleController.text,
+        'content': _contentController.text,
+        'category': category,
+        'isAcademic': isAcademic,
+        'readTime': readTime,
+      };
+
+      if (imageUrl != null) {
+        updateData['imageUrl'] = imageUrl;
+      } else if (currentImageUrl == null) {
+        // Remove image if it was deleted
+        updateData['imageUrl'] = FieldValue.delete();
+      }
+
+      await _firestore.collection(_collectionName).doc(storyId).update(updateData);
 
       // Clear the text fields
       _titleController.clear();
@@ -409,7 +415,18 @@ class _StoryScreenState extends State<StoryScreen> {
           duration: Duration(seconds: 2),
         ),
       );
-    });
+    } catch (e) {
+      // Close the loading dialog
+      Navigator.of(context).pop();
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating story: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _showUploadSuccessDialog(DateTime timestamp) {
@@ -459,8 +476,8 @@ class _StoryScreenState extends State<StoryScreen> {
     );
   }
 
-  // Delete a story
-  void _deleteStory(String storyId) {
+  // DELETE operation
+  Future<void> _deleteStory(String storyId) async {
     // Show confirmation dialog
     showDialog(
       context: context,
@@ -475,23 +492,70 @@ class _StoryScreenState extends State<StoryScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               // Close the dialog
               Navigator.of(context).pop();
               
-              // Remove the story from the list immediately
-              setState(() {
-                stories.removeWhere((story) => story.id == storyId);
-              });
-              
-              // Show success message
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Story deleted successfully'),
-                  backgroundColor: Color(0xFFFF69B4),
-                  duration: Duration(seconds: 2),
+              // Show loading indicator
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF69B4)),
+                      ),
+                      SizedBox(height: 16),
+                      Text('Deleting story...'),
+                    ],
+                  ),
                 ),
               );
+              
+              try {
+                // Get the story to check if it has an image
+                final storyDoc = await _firestore.collection(_collectionName).doc(storyId).get();
+                final data = storyDoc.data();
+                
+                // Delete the image from storage if it exists
+                if (data != null && data['imageUrl'] != null) {
+                  try {
+                    final ref = _storage.refFromURL(data['imageUrl']);
+                    await ref.delete();
+                  } catch (e) {
+                    print('Error deleting image: $e');
+                    // Continue with story deletion even if image deletion fails
+                  }
+                }
+                
+                // Delete the story document
+                await _firestore.collection(_collectionName).doc(storyId).delete();
+                
+                // Close loading dialog
+                Navigator.of(context).pop();
+                
+                // Show success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Story deleted successfully'),
+                    backgroundColor: Color(0xFFFF69B4),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              } catch (e) {
+                // Close loading dialog
+                Navigator.of(context).pop();
+                
+                // Show error message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error deleting story: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -504,6 +568,405 @@ class _StoryScreenState extends State<StoryScreen> {
     );
   }
 
+  // Add comment operation
+  Future<void> _addComment(String storyId, String commentText) async {
+    if (commentText.trim().isEmpty) return;
+    
+    try {
+      final storyRef = _firestore.collection(_collectionName).doc(storyId);
+      
+      final newComment = {
+        'author': 'You', // Simplified without authentication
+        'content': commentText.trim(),
+        'timestamp': FieldValue.serverTimestamp(),
+      };
+      
+      await storyRef.update({
+        'comments': FieldValue.arrayUnion([newComment]),
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Comment added successfully'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error adding comment: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Toggle like operation
+  Future<void> _toggleLike(String storyId, bool isCurrentlyLiked) async {
+    try {
+      final storyRef = _firestore.collection(_collectionName).doc(storyId);
+      
+      // Get current story data
+      final storyDoc = await storyRef.get();
+      final storyData = storyDoc.data();
+      
+      if (storyData != null) {
+        final currentLikes = storyData['likes'] ?? 0;
+        
+        // Update likes count and isLiked status
+        await storyRef.update({
+          'likes': isCurrentlyLiked ? currentLikes - 1 : currentLikes + 1,
+          'isLiked': !isCurrentlyLiked,
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error toggling like: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Toggle save operation
+  Future<void> _toggleSave(String storyId, bool isCurrentlySaved) async {
+    try {
+      final storyRef = _firestore.collection(_collectionName).doc(storyId);
+      
+      // Update isSaved status
+      await storyRef.update({
+        'isSaved': !isCurrentlySaved,
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isCurrentlySaved ? 'Story removed from saved' : 'Story saved'),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving story: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Stories',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: const Color(0xFFFFC0CB),
+        foregroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        actions: [
+          // Academic filter toggle
+          IconButton(
+            icon: Icon(
+              Icons.school,
+              color: _showOnlyAcademic ? const Color(0xFFFF69B4) : Colors.black,
+            ),
+            tooltip: 'Show Academic Content Only',
+            onPressed: () {
+              setState(() {
+                _showOnlyAcademic = !_showOnlyAcademic;
+              });
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    _showOnlyAcademic 
+                        ? 'Showing academic content only' 
+                        : 'Showing all content'
+                  ),
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: const Color(0xFFFF69B4),
+                ),
+              );
+            },
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFB6C1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.people),
+              onPressed: () {},
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: Container(
+        color: const Color(0xFFFFF0F5),
+        child: Column(
+          children: [
+            // Add Story Button - Prominent at the top
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.white,
+              child: ElevatedButton.icon(
+                onPressed: () => _showUploadDialog(),
+                icon: const Icon(Icons.add_circle),
+                label: const Text('Add New Story'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 250, 151, 201),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+            
+            // Category filter chips
+            Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _firestore.collection(_collectionName)
+                    .orderBy('category')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  // Extract unique categories
+                  Set<String> categories = {'All'};
+                  if (snapshot.hasData) {
+                    for (var doc in snapshot.data!.docs) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      if (data['category'] != null) {
+                        categories.add(data['category'] as String);
+                      }
+                    }
+                  }
+                  
+                  return ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: categories.map((category) => 
+                      _buildFilterChip(
+                        category, 
+                        _selectedCategory == category
+                      )
+                    ).toList(),
+                  );
+                }
+              ),
+            ),
+            
+            // Academic content banner
+            if (_showOnlyAcademic)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                color: const Color(0xFFFF69B4).withOpacity(0.2),
+                child: Row(
+                  children: [
+                    const Icon(Icons.school, color: Color(0xFFFF69B4)),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Academic Content',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFF69B4),
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _showOnlyAcademic = false;
+                        });
+                      },
+                      child: const Text('Show All'),
+                    ),
+                  ],
+                ),
+              ),
+              
+            // Stories list - READ operation
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _getFilteredStoriesStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF69B4)),
+                      ),
+                    );
+                  }
+                  
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Error: ${snapshot.error}'),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {});
+                            },
+                            child: const Text('Try Again'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  
+                  final stories = snapshot.data?.docs ?? [];
+                  
+                  if (stories.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No stories found',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    );
+                  }
+                  
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(8),
+                    itemCount: stories.length,
+                    itemBuilder: (context, index) {
+                      final doc = stories[index];
+                      final data = doc.data() as Map<String, dynamic>;
+                      
+                      // Convert Firestore data to Story object
+                      final story = _convertToStory(doc.id, data);
+                      
+                      return StoryCard(
+                        story: story,
+                        onCommentAdded: (storyId, comment) {
+                          _addComment(storyId, comment.content);
+                        },
+                        onDelete: (storyId) {
+                          _deleteStory(storyId);
+                        },
+                        onEdit: (story) {
+                          _showUploadDialog(storyToEdit: story);
+                        },
+                        onView: (story) {
+                          _viewFullStory(story);
+                        },
+                        onToggleLike: (storyId, isLiked) {
+                          _toggleLike(storyId, isLiked);
+                        },
+                        onToggleSave: (storyId, isSaved) {
+                          _toggleSave(storyId, isSaved);
+                        },
+                        isUserStory: true, // Simplified without authentication
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showUploadDialog(),
+        backgroundColor: const Color(0xFFFF69B4),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+  
+  Stream<QuerySnapshot> _getFilteredStoriesStream() {
+    Query query = _firestore.collection(_collectionName)
+        .orderBy('timestamp', descending: true);
+    
+    if (_showOnlyAcademic) {
+      query = query.where('isAcademic', isEqualTo: true);
+    }
+    
+    if (_selectedCategory != 'All') {
+      query = query.where('category', isEqualTo: _selectedCategory);
+    }
+    
+    return query.snapshots();
+  }
+  
+  Story _convertToStory(String id, Map<String, dynamic> data) {
+    // Convert Firestore timestamp to DateTime
+    final timestamp = (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+    
+    // Extract comments
+    final commentsData = data['comments'] as List<dynamic>? ?? [];
+    final comments = commentsData.map((comment) {
+      final commentTimestamp = (comment['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+      return Comment(
+        author: comment['author'] ?? '',
+        content: comment['content'] ?? '',
+        timestamp: commentTimestamp,
+      );
+    }).toList();
+    
+    return Story(
+      id: id,
+      title: data['title'] ?? '',
+      content: data['content'] ?? '',
+      author: data['author'] ?? '',
+      timestamp: timestamp,
+      likes: data['likes'] ?? 0,
+      comments: comments,
+      readTime: data['readTime'] ?? '1min read',
+      category: data['category'] ?? 'Other',
+      isAcademic: data['isAcademic'] ?? false,
+      imageUrl: data['imageUrl'],
+    )
+      ..isLiked = data['isLiked'] ?? false
+      ..isSaved = data['isSaved'] ?? false;
+  }
+  
+  Widget _buildFilterChip(String label, bool isSelected) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: FilterChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (selected) {
+          setState(() {
+            _selectedCategory = label;
+          });
+        },
+        backgroundColor: Colors.white,
+        selectedColor: const Color(0xFFFF69B4).withOpacity(0.2),
+        checkmarkColor: const Color(0xFFFF69B4),
+        labelStyle: TextStyle(
+          color: isSelected ? const Color(0xFFFF69B4) : Colors.black,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+    );
+  }
+  
   void _viewFullStory(Story story) {
     showDialog(
       context: context,
@@ -752,216 +1215,6 @@ class _StoryScreenState extends State<StoryScreen> {
       ),
     );
   }
-
-  @override
-  Widget build(BuildContext context) {
-    // Filter stories if academic filter is on
-    final filteredStories = _showOnlyAcademic 
-        ? stories.where((story) => story.isAcademic).toList()
-        : stories;
-        
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Stories',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: const Color(0xFFFFC0CB),
-        foregroundColor: Colors.black,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-        actions: [
-          // Academic filter toggle
-          IconButton(
-            icon: Icon(
-              Icons.school,
-              color: _showOnlyAcademic ? const Color(0xFFFF69B4) : Colors.black,
-            ),
-            tooltip: 'Show Academic Content Only',
-            onPressed: () {
-              setState(() {
-                _showOnlyAcademic = !_showOnlyAcademic;
-              });
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    _showOnlyAcademic 
-                        ? 'Showing academic content only' 
-                        : 'Showing all content'
-                  ),
-                  duration: const Duration(seconds: 2),
-                  backgroundColor: const Color(0xFFFF69B4),
-                ),
-              );
-            },
-          ),
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFB6C1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.people),
-              onPressed: () {},
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: Container(
-        color: const Color(0xFFFFF0F5),
-        child: Column(
-          children: [
-            // Add Story Button - Prominent at the top
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: Colors.white,
-              child: ElevatedButton.icon(
-                onPressed: () => _showUploadDialog(),
-                icon: const Icon(Icons.add_circle),
-                label: const Text('Add New Story'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 250, 151, 201),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-            
-            // Category filter chips
-            Container(
-              height: 50,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  _buildFilterChip('All', true),
-                  _buildFilterChip('Technology', false),
-                  _buildFilterChip('Education', false),
-                  _buildFilterChip('Research', false),
-                  _buildFilterChip('Scholarships', false),
-                  _buildFilterChip('Leadership', false),
-                ],
-              ),
-            ),
-            
-            // Academic content banner
-            if (_showOnlyAcademic)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                color: const Color(0xFFFF69B4).withOpacity(0.2),
-                child: Row(
-                  children: [
-                    const Icon(Icons.school, color: Color(0xFFFF69B4)),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Academic Content',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFFF69B4),
-                      ),
-                    ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _showOnlyAcademic = false;
-                        });
-                      },
-                      child: const Text('Show All'),
-                    ),
-                  ],
-                ),
-              ),
-              
-            // Stories list
-            Expanded(
-              child: filteredStories.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No stories found',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(8),
-                      itemCount: filteredStories.length,
-                      itemBuilder: (context, index) {
-                        return StoryCard(
-                          story: filteredStories[index],
-                          onCommentAdded: (storyId, comment) {
-                            setState(() {
-                              final storyIndex = stories.indexWhere((s) => s.id == storyId);
-                              if (storyIndex != -1) {
-                                stories[storyIndex].comments.add(comment);
-                              }
-                            });
-                          },
-                          onDelete: (storyId) {
-                            _deleteStory(storyId);
-                          },
-                          onEdit: (story) {
-                            _showUploadDialog(storyToEdit: story);
-                          },
-                          onView: (story) {
-                            _viewFullStory(story);
-                          },
-                          isUserStory: filteredStories[index].author == 'You',
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showUploadDialog(),
-        backgroundColor: const Color(0xFFFF69B4),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-    );
-  }
-  
-  Widget _buildFilterChip(String label, bool isSelected) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: FilterChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (selected) {
-          // Filter logic would go here
-        },
-        backgroundColor: Colors.white,
-        selectedColor: const Color(0xFFFF69B4).withOpacity(0.2),
-        checkmarkColor: const Color(0xFFFF69B4),
-        labelStyle: TextStyle(
-          color: isSelected ? const Color(0xFFFF69B4) : Colors.black,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-    );
-  }
 }
 
 class Comment {
@@ -1029,6 +1282,8 @@ class StoryCard extends StatefulWidget {
   final Function(String storyId) onDelete;
   final Function(Story story) onEdit;
   final Function(Story story) onView;
+  final Function(String storyId, bool isLiked)? onToggleLike;
+  final Function(String storyId, bool isSaved)? onToggleSave;
   final bool isUserStory;
 
   const StoryCard({
@@ -1038,6 +1293,8 @@ class StoryCard extends StatefulWidget {
     required this.onDelete,
     required this.onEdit,
     required this.onView,
+    this.onToggleLike,
+    this.onToggleSave,
     this.isUserStory = false,
   });
 
@@ -1066,15 +1323,6 @@ class _StoryCardState extends State<StoryCard> {
 
     widget.onCommentAdded(widget.story.id, newComment);
     _commentController.clear();
-
-    // Show a snackbar to confirm the comment was added
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Comment added successfully'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
   }
 
   void _showStoryOptions() {
@@ -1177,7 +1425,7 @@ class _StoryCardState extends State<StoryCard> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      color: Colors.white, // Changed from pink to white
+      color: Colors.white,
       child: InkWell(
         onTap: () => widget.onView(widget.story),
         borderRadius: BorderRadius.circular(12),
@@ -1357,6 +1605,7 @@ class _StoryCardState extends State<StoryCard> {
                           setState(() {
                             widget.story.isLiked = !widget.story.isLiked;
                           });
+                          widget.onToggleLike?.call(widget.story.id, widget.story.isLiked);
                         },
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -1409,6 +1658,7 @@ class _StoryCardState extends State<StoryCard> {
                       setState(() {
                         widget.story.isSaved = !widget.story.isSaved;
                       });
+                      widget.onToggleSave?.call(widget.story.id, widget.story.isSaved);
                     },
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -1534,4 +1784,3 @@ class _StoryCardState extends State<StoryCard> {
     );
   }
 }
-

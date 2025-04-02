@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'story_screen.dart';
+import 'firebase_options.dart'; // Import generated Firebase options
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter initializes before Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  ); // Initialize Firebase
+
   runApp(const EmpowerHerTalesApp());
 }
 
@@ -59,4 +66,3 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
