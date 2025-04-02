@@ -39,20 +39,6 @@ class _EventsScreenState extends State<EventsScreen> {
       'format': 'Online',
       'image': 'https://img.evbuc.com/https%3A%2F%2Fcdn.evbuc.com%2Fimages%2F964405523%2F1400146494193%2F1%2Foriginal.20250219-154610?auto=format%2Ccompress&q=75&sharp=10&s=6dc0cc08553345f6bda5d4c5a9a39358'
     },
-    {
-      'title': 'Sip & Socialize - Women in Business',
-      'date': 'April 20th, 2025',
-      'location': 'Wilton Manors, FL',
-      'format': 'Physical/Online',
-      'image': 'https://tse3.mm.bing.net/th?id=OIP.h13VGj2lVmIi1a-G5J-Z9AHaDY&pid=Api'
-    },
-    {
-      'title': 'Transform-Her Conference',
-      'date': 'May 30th, 2025',
-      'location': 'Kigali Convention Centre',
-      'format': 'Physical/Online',
-      'image': 'https://img.evbuc.com/https%3A%2F%2Fcdn.evbuc.com%2Fimages%2F924659573%2F2560146604071%2F1%2Foriginal.20241229-232930?crop=focalpoint&fit=crop&w=512&auto=format%2Ccompress&q=75&sharp=10&fp-x=0.005&fp-y=0.005&s=6672abe5e9d5d3d446ebf411f3b58c18'
-    },
   ];
 
   void _addNewEvent(Map<String, String> newEvent) {
@@ -61,6 +47,59 @@ class _EventsScreenState extends State<EventsScreen> {
         ...newEvent,
         'image': 'https://images.unsplash.com/photo-1521791055366-0d553872125f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1469&q=80'
       });
+    });
+  }
+
+  void _deleteEvent(int index) {
+    final deletedEvent = events[index];
+    setState(() {
+      events.removeAt(index);
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Event deleted'),
+        duration: Duration(seconds: 3),
+        backgroundColor: Colors.pink,
+        action: SnackBarAction(
+          label: 'UNDO',
+          textColor: Colors.white,
+          onPressed: () {
+            setState(() {
+              events.insert(index, deletedEvent);
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(int index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Delete Event"),
+          content: Text("Are you sure you want to delete this event?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text("Cancel", style: TextStyle(color: Colors.pink)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+                _deleteEvent(index);
+              },
+              child: Text("Delete", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    ).then((confirmed) {
+      if (confirmed ?? false) {
+        _deleteEvent(index);
+      }
     });
   }
 
@@ -124,9 +163,45 @@ class _EventsScreenState extends State<EventsScreen> {
               itemCount: events.length,
               itemBuilder: (context, index) {
                 final event = events[index];
-                return AnimatedContainer(
-                  duration: Duration(milliseconds: 500),
-                  curve: Curves.easeInOut,
+                return Dismissible(
+                  key: Key(event['title']! + index.toString()),
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerLeft,
+                    padding: EdgeInsets.only(left: 20),
+                    child: Icon(Icons.delete, color: Colors.white, size: 30),
+                  ),
+                  secondaryBackground: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.only(right: 20),
+                    child: Icon(Icons.delete, color: Colors.white, size: 30),
+                  ),
+                  confirmDismiss: (direction) async {
+                    final bool? confirmed = await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Delete Event"),
+                          content: Text("Are you sure you want to delete this event?"),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: Text("Cancel", style: TextStyle(color: Colors.pink)),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: Text("Delete", style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                    return confirmed;
+                  },
+                  onDismissed: (direction) {
+                    _deleteEvent(index);
+                  },
                   child: Card(
                     margin: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                     shape: RoundedRectangleBorder(
@@ -206,10 +281,17 @@ class _EventsScreenState extends State<EventsScreen> {
                                   IconButton(
                                     icon: Icon(Icons.share, color: Colors.pink),
                                     onPressed: () {},
+                                    tooltip: 'Share Event',
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.bookmark_border, color: Colors.pink),
+                                    icon: Icon(Icons.bookmark, color: Colors.pink),
                                     onPressed: () {},
+                                    tooltip: 'Save Event',
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => _confirmDelete(index),
+                                    tooltip: 'Delete Event',
                                   ),
                                 ],
                               ),
