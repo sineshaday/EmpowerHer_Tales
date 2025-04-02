@@ -17,10 +17,10 @@ class EmpowerHerTalesApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const ProfilePage(), // Start directly on profile
+      home: const LoginScreen(), // Now shows Login first
       routes: {
         '/profile': (context) => const ProfilePage(),
-        '/login': (context) => const LoginScreen(), // Just in case for logout
+        '/login': (context) => const LoginScreen(),
       },
     );
   }

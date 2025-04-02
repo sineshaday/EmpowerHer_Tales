@@ -1,6 +1,15 @@
 import 'package:empowerher_tales/screens/signup.dart';
+import 'package:empowerher_tales/services.dart/authService.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import 'package:empowerher_tales/screens/resetPassword.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:empowerher_tales/screens/home_screen.dart';
+
+// import 'home_screen.dart';
+// import 'signup_screen.dart';
+// import 'recover_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,6 +21,26 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
+  TextEditingController emailController = new TextEditingController();
+  TextEditingController passwordController = new TextEditingController();
+  void logInUser() async {
+    try {
+      print("email: ${emailController.text}");
+      print('password: ${passwordController.text}');
+      await authService.value.signIn(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } on FirebaseException catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message.toString())));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             TextField(
+              controller: emailController,
               decoration: InputDecoration(
                 hintText: "Enter here...",
                 prefixIcon: Icon(Icons.email),
@@ -53,6 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             TextField(
+              controller: passwordController,
               obscureText: !_isPasswordVisible,
               decoration: InputDecoration(
                 hintText: "Enter password...",
@@ -80,9 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => RecoverPasswordScreen(),
-                    ),
+                    MaterialPageRoute(builder: (context) => ResetPassword()),
                   );
                 },
                 child: Text(
@@ -95,12 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => HomeScreen()),
-                  );
-                },
+                onPressed: logInUser,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.pink,
                   shape: RoundedRectangleBorder(
@@ -125,62 +149,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Text("Sign Up", style: TextStyle(color: Colors.pink)),
                 ),
               ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text("Home Screen")));
-  }
-}
-
-class RecoverPasswordScreen extends StatelessWidget {
-  const RecoverPasswordScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Recover Password")),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              "Enter your email to recover your password",
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 15),
-            TextField(
-              decoration: InputDecoration(
-                hintText: "Enter email...",
-                prefixIcon: Icon(Icons.email),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            SizedBox(height: 15),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.pink,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text("Submit", style: TextStyle(color: Colors.white)),
-              ),
             ),
           ],
         ),
