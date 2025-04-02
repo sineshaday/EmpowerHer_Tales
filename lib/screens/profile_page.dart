@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -14,7 +13,6 @@ class ProfilePage extends StatefulWidget {
 
 class ProfilePageState extends State<ProfilePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final ImagePicker _picker = ImagePicker();
 
@@ -47,39 +45,23 @@ class ProfilePageState extends State<ProfilePage> {
       return;
     }
 
-    try {
-      final userDoc =
-          await _firestore.collection('users').doc(_user!.uid).get();
-      final data = userDoc.data() as Map<String, dynamic>?;
-
-      setState(() {
-        _name = data?['name'] ?? _user!.displayName ?? 'Anonymous';
-        _email = _user!.email ?? 'guest@example.com';
-        _photoURL =
-            data?['photoURL'] ?? _user!.photoURL ?? 'assets/profile_pic.png';
-
-        _nameController.text = _name;
-        _emailController.text = _email;
-      });
-    } catch (e) {
-      debugPrint("Error fetching user profile: $e");
-    } finally {
-      setState(() => _loading = false);
-    }
+    setState(() {
+      _name = _user!.displayName ?? 'Anonymous';
+      _email = _user!.email ?? 'guest@example.com';
+      _photoURL = _user!.photoURL ?? 'assets/profile_pic.png';
+      _nameController.text = _name;
+      _emailController.text = _email;
+      _loading = false;
+    });
   }
 
   Future<void> _updateName() async {
-    if (_user == null ||
-        _nameController.text.trim().isEmpty ||
-        _nameController.text == _name)
-      return;
+    if (_user == null || _nameController.text.trim().isEmpty) return;
 
     setState(() => _updating = true);
     try {
-      await _firestore.collection('users').doc(_user!.uid).update({
-        'name': _nameController.text.trim(),
-      });
-      setState(() => _name = _nameController.text.trim());
+      await _user!.updateDisplayName(_nameController.text.trim());
+      await _fetchUserProfile();
     } catch (e) {
       debugPrint("Error updating name: $e");
     } finally {
@@ -88,21 +70,15 @@ class ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _updateEmail() async {
-    if (_user == null ||
-        _emailController.text.trim().isEmpty ||
-        _emailController.text == _email)
-      return;
+    if (_user == null || _emailController.text.trim().isEmpty) return;
 
     setState(() => _updating = true);
     try {
       await _user!.updateEmail(_emailController.text.trim());
-      await _firestore.collection('users').doc(_user!.uid).update({
-        'email': _emailController.text.trim(),
-      });
-      setState(() => _email = _emailController.text.trim());
-    } on FirebaseAuthException catch (e) {
+      await _fetchUserProfile();
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Email update failed: ${e.message}")),
+        SnackBar(content: Text("Email update failed: ${e.toString()}")),
       );
     } finally {
       setState(() => _updating = false);
@@ -120,16 +96,12 @@ class ProfilePageState extends State<ProfilePage> {
     setState(() => _updating = true);
     try {
       final File imageFile = File(pickedFile.path);
-      final Reference ref = _storage.ref().child(
-        'profile-images/${_user!.uid}',
-      );
+      final ref = _storage.ref().child('profile-images/${_user!.uid}');
       await ref.putFile(imageFile);
-      final String downloadURL = await ref.getDownloadURL();
+      final url = await ref.getDownloadURL();
 
-      await _firestore.collection('users').doc(_user!.uid).update({
-        'photoURL': downloadURL,
-      });
-      setState(() => _photoURL = downloadURL);
+      await _user!.updatePhotoURL(url);
+      await _fetchUserProfile();
     } catch (e) {
       debugPrint("Error uploading image: $e");
     } finally {
@@ -139,15 +111,14 @@ class ProfilePageState extends State<ProfilePage> {
 
   Future<void> _deleteAccount() async {
     try {
-      await _firestore.collection('users').doc(_user!.uid).delete();
       await _user!.delete();
       await _auth.signOut();
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/login');
-    } on FirebaseAuthException catch (e) {
+    } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Delete failed: ${e.message}")));
+      ).showSnackBar(SnackBar(content: Text("Delete failed: ${e.toString()}")));
     }
   }
 
@@ -252,10 +223,7 @@ class ProfilePageState extends State<ProfilePage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      "You're browsing as a guest. ",
-                      style: TextStyle(fontSize: 13),
-                    ),
+                    const Text("You're browsing as a guest. "),
                     TextButton(
                       onPressed:
                           () =>
