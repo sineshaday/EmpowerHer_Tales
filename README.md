@@ -1,10 +1,10 @@
 # empowerher_tales
 
-App Purpose
+## App Purpose
 
 This application serves as a [brief app purpose]. It aims to provide users with [key functionalities and objectives].
 
-Setup Instructions
+### Setup Instructions
 
 Prerequisites
 
@@ -24,12 +24,13 @@ Installation Steps
 
 Clone the Repository
 
-git clone https://github.com/sineshaday/EmpowerHer_Tales.git
-cd EmpowerHer_Tales
+```git clone https://github.com/sineshaday/EmpowerHer_Tales.git```
+
+```cd EmpowerHer_Tales```
 
 Install Dependencies
 
-flutter pub get
+```flutter pub get```
 
 Set Up Firebase
 
@@ -41,15 +42,15 @@ Place these files in the respective platform directories (android/app/ for Andro
 
 Enable Firebase Authentication and Firestore in the Firebase Console.
 
-Run the App
+### Run the App
 
-flutter run
+```flutter run```
 
 Database Architecture
 
 The app uses Firebase Firestore for database management. The structure follows:
 
-Firestore Database
+```Firestore Database
 |
 ├── users (Collection)
 │   ├── userId1 (Document)
@@ -64,8 +65,9 @@ Firestore Database
 │   │   ├── field1: Type
 │   │   ├── field2: Type
 │   ├── ...
+```
 
-Functionalities
+###Functionalities
 
 User Authentication (Sign up, Login, Logout with Firebase Auth)
 
