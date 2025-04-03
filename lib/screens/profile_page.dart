@@ -24,7 +24,9 @@ class ProfilePageState extends State<ProfilePage> {
   String _name = "Guest User";
   String _email = "guest@example.com";
   String _photoURL = "assets/profile_pic.png";
+
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
   @override
   void initState() {
@@ -39,26 +41,26 @@ class ProfilePageState extends State<ProfilePage> {
     if (_user == null) {
       setState(() {
         _nameController.text = _name;
+        _emailController.text = _email;
         _loading = false;
       });
       return;
     }
 
     try {
-      final DocumentSnapshot userDoc =
+      final userDoc =
           await _firestore.collection('users').doc(_user!.uid).get();
+      final data = userDoc.data() as Map<String, dynamic>?;
 
-      if (userDoc.exists) {
-        setState(() {
-          _name = userDoc['name'] ?? _user!.displayName ?? 'Anonymous';
-          _email = _user!.email ?? '';
-          _photoURL =
-              userDoc['photoURL'] ??
-              _user!.photoURL ??
-              'assets/profile_pic.png';
-          _nameController.text = _name;
-        });
-      }
+      setState(() {
+        _name = data?['name'] ?? _user!.displayName ?? 'Anonymous';
+        _email = _user!.email ?? 'guest@example.com';
+        _photoURL =
+            data?['photoURL'] ?? _user!.photoURL ?? 'assets/profile_pic.png';
+
+        _nameController.text = _name;
+        _emailController.text = _email;
+      });
     } catch (e) {
       debugPrint("Error fetching user profile: $e");
     } finally {
@@ -77,11 +79,31 @@ class ProfilePageState extends State<ProfilePage> {
       await _firestore.collection('users').doc(_user!.uid).update({
         'name': _nameController.text.trim(),
       });
-      setState(() {
-        _name = _nameController.text.trim();
-      });
+      setState(() => _name = _nameController.text.trim());
     } catch (e) {
       debugPrint("Error updating name: $e");
+    } finally {
+      setState(() => _updating = false);
+    }
+  }
+
+  Future<void> _updateEmail() async {
+    if (_user == null ||
+        _emailController.text.trim().isEmpty ||
+        _emailController.text == _email)
+      return;
+
+    setState(() => _updating = true);
+    try {
+      await _user!.updateEmail(_emailController.text.trim());
+      await _firestore.collection('users').doc(_user!.uid).update({
+        'email': _emailController.text.trim(),
+      });
+      setState(() => _email = _emailController.text.trim());
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Email update failed: ${e.message}")),
+      );
     } finally {
       setState(() => _updating = false);
     }
@@ -107,13 +129,25 @@ class ProfilePageState extends State<ProfilePage> {
       await _firestore.collection('users').doc(_user!.uid).update({
         'photoURL': downloadURL,
       });
-      setState(() {
-        _photoURL = downloadURL;
-      });
+      setState(() => _photoURL = downloadURL);
     } catch (e) {
       debugPrint("Error uploading image: $e");
     } finally {
       setState(() => _updating = false);
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    try {
+      await _firestore.collection('users').doc(_user!.uid).delete();
+      await _user!.delete();
+      await _auth.signOut();
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/login');
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Delete failed: ${e.message}")));
     }
   }
 
@@ -179,28 +213,38 @@ class ProfilePageState extends State<ProfilePage> {
               ],
             ),
             const SizedBox(height: 25),
-            _buildEditableInfoBox(),
+            _buildEditableBox(_nameController, "Name", _updateName),
             const SizedBox(height: 10),
-            _buildInfoBox(_email, 14.5),
+            _buildEditableBox(_emailController, "Email", _updateEmail),
             const SizedBox(height: 25),
             if (_user != null)
-              SizedBox(
-                width: 140,
-                height: 42,
-                child: ElevatedButton(
-                  onPressed: _logout,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.pinkAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+              Column(
+                children: [
+                  SizedBox(
+                    width: 140,
+                    height: 42,
+                    child: ElevatedButton(
+                      onPressed: _logout,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.pinkAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Log Out',
+                        style: TextStyle(fontSize: 15, color: Colors.white),
+                      ),
                     ),
-                    elevation: 3,
                   ),
-                  child: const Text(
-                    'Log Out',
-                    style: TextStyle(fontSize: 15, color: Colors.white),
+                  TextButton(
+                    onPressed: _deleteAccount,
+                    child: const Text(
+                      "Delete My Account",
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
-                ),
+                ],
               ),
             if (_user == null)
               Padding(
@@ -213,9 +257,9 @@ class ProfilePageState extends State<ProfilePage> {
                       style: TextStyle(fontSize: 13),
                     ),
                     TextButton(
-                      onPressed: () {
-                        Navigator.pushReplacementNamed(context, '/login');
-                      },
+                      onPressed:
+                          () =>
+                              Navigator.pushReplacementNamed(context, '/login'),
                       child: const Text(
                         'Log In',
                         style: TextStyle(
@@ -239,10 +283,14 @@ class ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildEditableInfoBox() {
+  Widget _buildEditableBox(
+    TextEditingController controller,
+    String label,
+    VoidCallback onSave,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      height: 40,
+      height: 45,
       width: 300,
       alignment: Alignment.center,
       decoration: BoxDecoration(
@@ -253,7 +301,7 @@ class ProfilePageState extends State<ProfilePage> {
         ],
       ),
       child: TextFormField(
-        controller: _nameController,
+        controller: controller,
         enabled: _user != null,
         textAlign: TextAlign.center,
         style: const TextStyle(
@@ -262,31 +310,7 @@ class ProfilePageState extends State<ProfilePage> {
           color: Colors.black87,
         ),
         decoration: const InputDecoration(border: InputBorder.none),
-        onEditingComplete: _updateName,
-      ),
-    );
-  }
-
-  Widget _buildInfoBox(String text, double fontSize) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      height: 43,
-      width: 300,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF3CD),
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 1)),
-        ],
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
+        onEditingComplete: onSave,
       ),
     );
   }

@@ -1,43 +1,52 @@
-import 'package:flutter/material.dart';
+import 'package:empowerher_tales/screens/home_screen.dart';
+import 'package:empowerher_tales/pages/resetPassword.dart';
+import 'package:empowerher_tales/services.dart/authService.dart';
+import 'package:empowerher_tales/pages/signup.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-//import 'home_screen.dart';
-import 'signup.dart';
-//import 'recover_password_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  TextEditingController emailController = new TextEditingController();
+  TextEditingController passwordController = new TextEditingController();
 
-  // Function for login
-  Future<void> _login() async {
+  void logInUser() async {
     try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      //print("email: ${emailController.text}");
+      //print('password: ${passwordController.text}');
+      await authService.value.signIn(
+        email: emailController.text,
+        password: passwordController.text,
       );
+      final userDoc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(FirebaseAuth.instance.currentUser!.uid)
+              .get();
 
-      if (userCredential.user != null) {
-        // Successfully logged in, navigate to Home Screen
+      if (userDoc.exists) {
+        print("User data: ${userDoc.data()}");
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomeScreen()),
         );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("User profile not found")),
+        );
       }
-    } catch (e) {
-      // Handle login errors
+    } on FirebaseException catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Login Failed: ${e.toString()}")));
+      ).showSnackBar(SnackBar(content: Text(e.message.toString())));
     }
   }
 
@@ -52,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.asset("assets/home1.jpg", height: 150),
+              child: Image.asset("assets/home.jpg", height: 150),
             ),
             SizedBox(height: 30),
             Align(
@@ -64,6 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             TextField(
+              controller: emailController,
               decoration: InputDecoration(
                 hintText: "Enter here...",
                 prefixIcon: Icon(Icons.email),
@@ -81,6 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             TextField(
+              controller: passwordController,
               obscureText: !_isPasswordVisible,
               decoration: InputDecoration(
                 hintText: "Enter password...",
@@ -108,9 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => RecoverPasswordScreen(),
-                    ),
+                    MaterialPageRoute(builder: (context) => ResetPassword()),
                   );
                 },
                 child: Text(
@@ -123,12 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => HomeScreen()),
-                  );
-                },
+                onPressed: logInUser,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.pink,
                   shape: RoundedRectangleBorder(
@@ -153,63 +157,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Text("Sign Up", style: TextStyle(color: Colors.pink)),
                 ),
               ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text("EmpowerHer Tales")));
-  }
-}
-
-class RecoverPasswordScreen extends StatelessWidget {
-  const RecoverPasswordScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Recover Password")),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              "Enter your email to recover your password",
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 15),
-
-            TextField(
-              decoration: InputDecoration(
-                hintText: "Enter email...",
-                prefixIcon: Icon(Icons.email),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            SizedBox(height: 15),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.pink,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text("Submit", style: TextStyle(color: Colors.white)),
-              ),
             ),
           ],
         ),

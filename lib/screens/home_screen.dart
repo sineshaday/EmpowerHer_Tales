@@ -133,6 +133,8 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.pink,
+        foregroundColor: Colors.white,
         title: Hero(
           tag: 'logo',
           child: Image.asset('assets/empowerher_tales.jpg', height: 40),
@@ -211,12 +213,13 @@ class HomeScreen extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder:
-                                      (context) => const StorySharingPage(),
+                                      (context) => const StoryScreen(),
                                 ),
                               );
                             },
                             child: const Text('Explore Stories'),
                           ),
+                        
                         ],
                       ),
                     ),

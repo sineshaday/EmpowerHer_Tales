@@ -80,7 +80,12 @@ class _EventsScreenState extends State<EventsScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreen()),
+              );
+          },
           ),
         title: Text(
           'Women Connect Events',

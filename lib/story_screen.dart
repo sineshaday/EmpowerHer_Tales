@@ -267,8 +267,8 @@ class _StoryScreenState extends State<StoryScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFFFFC0CB),
-        foregroundColor: Colors.black,
+        backgroundColor: Colors.pink,
+        foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -280,7 +280,7 @@ class _StoryScreenState extends State<StoryScreen> {
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: const BoxDecoration(
-              color: Color(0xFFFFB6C1),
+              color: Colors.grey,
               shape: BoxShape.circle,
             ),
             child: IconButton(
@@ -295,7 +295,7 @@ class _StoryScreenState extends State<StoryScreen> {
         ],
       ),
       body: Container(
-        color: const Color(0xFFFFF0F5),
+        color: Colors.white,
         child: ListView.builder(
           padding: const EdgeInsets.all(8),
           itemCount: stories.length,
@@ -316,7 +316,7 @@ class _StoryScreenState extends State<StoryScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showUploadDialog,
-        backgroundColor: const Color(0xFFFF69B4),
+        backgroundColor: const Color(0xffff69B4),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -447,7 +447,7 @@ class _StoryCardState extends State<StoryCard> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      color: const Color(0xFFFFD1DC),
+      color: Colors.grey[100],
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
