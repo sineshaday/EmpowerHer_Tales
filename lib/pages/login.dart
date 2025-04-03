@@ -1,6 +1,6 @@
 import 'package:empowerher_tales/pages/homepage.dart';
 import 'package:empowerher_tales/pages/resetPassword.dart';
-import 'package:empowerher_tales/services.dart/authService.dart';
+import 'package:empowerher_tales/services/authService.dart';
 import 'package:empowerher_tales/pages/signup.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

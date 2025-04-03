@@ -1,5 +1,5 @@
 import 'package:empowerher_tales/pages/login.dart';
-import 'package:empowerher_tales/services.dart/authService.dart';
+import 'package:empowerher_tales/services/authService.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {

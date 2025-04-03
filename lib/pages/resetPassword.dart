@@ -1,4 +1,4 @@
-import 'package:empowerher_tales/services.dart/authService.dart';
+import 'package:empowerher_tales/services/authService.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
