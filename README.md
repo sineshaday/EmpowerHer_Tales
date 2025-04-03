@@ -67,7 +67,7 @@ The app uses Firebase Firestore for database management. The structure follows:
 │   ├── ...
 ```
 
-###Functionalities
+### Functionalities
 
 User Authentication (Sign up, Login, Logout with Firebase Auth)
 
