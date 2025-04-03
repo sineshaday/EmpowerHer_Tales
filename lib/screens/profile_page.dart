@@ -154,7 +154,7 @@ class ProfilePageState extends State<ProfilePage> {
   Future<void> _logout() async {
     await _auth.signOut();
     if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/login');
+    Navigator.pushReplacementNamed(context, '/signup');
   }
 
   @override
